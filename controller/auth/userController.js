@@ -91,7 +91,7 @@ class userController {
             }
 
         } catch (error) {
-            responseReturn(res, 500, { error: "Server error !" })
+            responseReturn(res, 500, { error: error.message })
         }
     }
 
@@ -352,7 +352,7 @@ class userController {
 
             if (appointments.length > 0) {
                 responseReturn(res, 400, { error: "Appointments not available" })
-            }else{
+            } else {
                 responseReturn(res, 200, { message: "Appointments available" })
             }
 
