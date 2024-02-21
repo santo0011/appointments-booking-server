@@ -7,11 +7,6 @@ const cookieParser = require('cookie-parser');
 const { dbConnect } = require('./config/dbConnect')
 
 
-// app.use(cors({
-//     origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
-//     credentials: true
-// }));
-
 app.use(cors({
     origin: process.env.mode === 'pro' ? [process.env.client_production_url] : ['http://localhost:3000'],
     credentials: true

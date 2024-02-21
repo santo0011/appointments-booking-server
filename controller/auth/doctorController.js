@@ -96,12 +96,25 @@ class doctorController {
                 responseReturn(res, 404, { error: "Doctor not found!" });
             }
         } catch (error) {
-
-            console.log(error.message)
-
             responseReturn(res, 500, { error: "Server error!" });
         }
     };
+
+
+    // approve_book_status
+    approve_book_status = async (req, res) => {
+        const { id, status } = req.body;
+        try {
+            const bookStatus = await appointmentsModel.findByIdAndUpdate(id, { status }, { new: true });
+
+             console.log(bookStatus)
+
+            responseReturn(res, 200, { message: "Status update" })
+        } catch (error) {
+            responseReturn(res, 500, { error: "Server error!" });
+        }
+
+    }
 
 }
 

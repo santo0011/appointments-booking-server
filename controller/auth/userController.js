@@ -148,7 +148,7 @@ class userController {
                         onclickPath: "/admin-doctors"
                     })
 
-                    await userModel.findByIdAndUpdate(adminUser._id, { unseenNotifications })
+                    await userModel.findByIdAndUpdate(adminUser._id, { unseenNotifications },{ new: true })
 
                     responseReturn(res, 200, { message: "Apply success for doctor account" })
 
@@ -391,7 +391,7 @@ class userController {
                             onclickPath: "/doctor/appointments"
                         });
 
-                        await userModel.findByIdAndUpdate(doctorUserId, { unseenNotifications });
+                        await userModel.findByIdAndUpdate(doctorUserId, { unseenNotifications },{ new: true });
                     } else {
                         responseReturn(res, 400, { error: "Doctor user not found!" });
                     }
