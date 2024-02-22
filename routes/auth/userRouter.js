@@ -25,6 +25,8 @@ router.post('/check-book-avilabity', authMiddleware, userController.check_book_a
 
 router.post('/book-appointment', authMiddleware, userController.book_appointment);
 
+router.get('/get-appointment', authMiddleware, userController.get_appointment);
+
 
 
 module.exports = router;

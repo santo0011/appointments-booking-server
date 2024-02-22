@@ -9,7 +9,12 @@ class adminController {
         try {
             const notifications = await userModel.findOne({ isAdmin: true });
 
-            responseReturn(res, 200, { seenNotifications: notifications.seenNotifications, unseenNotifications: notifications.unseenNotifications })
+            if (notifications.unseenNotifications || notifications.seenNotifications) {
+                const unseenNotifications = notifications.unseenNotifications.reverse();
+                const seenNotifications = notifications.seenNotifications.reverse();
+                responseReturn(res, 200, { seenNotifications: seenNotifications, unseenNotifications: unseenNotifications })
+
+            }
 
         } catch (error) {
             responseReturn(res, 500, { error: "Server error !" })

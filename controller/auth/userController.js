@@ -148,7 +148,7 @@ class userController {
                         onclickPath: "/admin-doctors"
                     })
 
-                    await userModel.findByIdAndUpdate(adminUser._id, { unseenNotifications },{ new: true })
+                    await userModel.findByIdAndUpdate(adminUser._id, { unseenNotifications }, { new: true })
 
                     responseReturn(res, 200, { message: "Apply success for doctor account" })
 
@@ -173,7 +173,13 @@ class userController {
 
             if (!isAdmin) {
                 const userNotifications = await userModel.findOne({ _id: userId });
-                responseReturn(res, 200, { userSeenNotifications: userNotifications.seenNotifications, userUnseenNotifications: userNotifications.unseenNotifications })
+
+                if (userNotifications.unseenNotifications || userNotifications.seenNotifications) {
+                    const unseenNotifications = userNotifications.unseenNotifications.reverse();
+                    const seenNotifications = userNotifications.seenNotifications.reverse();
+                    responseReturn(res, 200, { userSeenNotifications: seenNotifications, userUnseenNotifications: unseenNotifications })
+
+                }
             }
 
         } catch (error) {
@@ -391,7 +397,7 @@ class userController {
                             onclickPath: "/doctor/appointments"
                         });
 
-                        await userModel.findByIdAndUpdate(doctorUserId, { unseenNotifications },{ new: true });
+                        await userModel.findByIdAndUpdate(doctorUserId, { unseenNotifications }, { new: true });
                     } else {
                         responseReturn(res, 400, { error: "Doctor user not found!" });
                     }
@@ -404,6 +410,28 @@ class userController {
             }
         }
     };
+
+
+    // get_appointment
+    get_appointment = async (req, rs) => {
+        const { searchValue, page, parPage } = req.query;
+        const skipPage = parseInt(parPage) * (parseInt(page) - 1);
+        const { userId } = req;
+        try {
+
+            if (searchValue) {
+
+            } else {
+
+                const myAppointments = await appointmentsModel.find({ userId: userId, status: 'approved' }).skip(skipPage).limit(parPage).sort({ createdAt: -1 });
+                console.log(myAppointments)
+
+            }
+
+        } catch (error) {
+            responseReturn(res, 500, { error: "Server error!" });
+        }
+    }
 
 
 }

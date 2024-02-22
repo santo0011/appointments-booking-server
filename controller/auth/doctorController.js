@@ -103,9 +103,29 @@ class doctorController {
 
     // approve_book_status
     approve_book_status = async (req, res) => {
-        const { id, status } = req.body;
+        const { bookId, status, userId, doctorId } = req.body;
+
         try {
-            const bookStatus = await appointmentsModel.findByIdAndUpdate(id, { status }, { new: true });
+
+            const bookStatus = await appointmentsModel.findByIdAndUpdate(bookId, { status }, { new: true });
+
+            if (bookStatus) {
+                const user = await userModel.findById(userId);
+                const doctor = await doctorModel.findById(doctorId);
+
+                if (user && doctor) {
+                    const unseenNotifications = user.unseenNotifications || [];
+                    unseenNotifications.push({
+                        type: "Appointment-status",
+                        message: `Your appointment request has been ${status} by Dr. ${doctor.firstName}`,
+                        onclickPath: "/"
+                    });
+                    await userModel.findByIdAndUpdate(userId, { unseenNotifications }, { new: true });
+                } else {
+                    responseReturn(res, 500, { error: "User or doctor not found!" });
+                }
+
+            }
 
             responseReturn(res, 200, { message: "Status update" })
         } catch (error) {
