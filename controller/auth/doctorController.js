@@ -107,8 +107,6 @@ class doctorController {
         try {
             const bookStatus = await appointmentsModel.findByIdAndUpdate(id, { status }, { new: true });
 
-             console.log(bookStatus)
-
             responseReturn(res, 200, { message: "Status update" })
         } catch (error) {
             responseReturn(res, 500, { error: "Server error!" });
