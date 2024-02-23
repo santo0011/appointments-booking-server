@@ -5,7 +5,7 @@ const appointmentsModel = require('../../models/appointmentsModel');
 const bcrpty = require('bcrypt');
 const moment = require('moment');
 const { createToken } = require('../../utiles/tokenCreate');
-
+const { ObjectId } = require('mongodb');
 
 class userController {
 
@@ -413,19 +413,126 @@ class userController {
 
 
     // get_appointment
-    get_appointment = async (req, rs) => {
-        const { searchValue, page, parPage } = req.query;
+    get_appointment = async (req, res) => {
+        const { searchValue, page } = req.query;
+        const parPage = parseInt(req.query.parPage);
         const skipPage = parseInt(parPage) * (parseInt(page) - 1);
-        const { userId } = req;
+        const user_id = req.userId;
+
         try {
+            const user = await appointmentsModel.findOne({ userId: user_id });
 
-            if (searchValue) {
+            if (user) {
 
+                if (searchValue) {
+
+                    const queryObject = [
+                        {
+                            $match: {
+                                userId: user.userId
+                            }
+                        }, {
+                            $lookup: {
+                                from: 'doctors',
+                                localField: 'doctorId',
+                                foreignField: '_id',
+                                as: "doctorDetails"
+                            }
+                        },
+                        {
+                            $unwind: '$doctorDetails',
+                        },
+                        {
+                            $match: {
+                                $or: [
+                                    { 'doctorDetails.firstName': { $regex: searchValue, $options: "i" } },
+                                    { 'doctorDetails.lastName': { $regex: searchValue, $options: "i" } },
+                                    { 'doctorDetails.address': { $regex: searchValue, $options: "i" } },
+                                    { status: { $regex: searchValue, $options: "i" } },
+                                    { date: { $regex: searchValue, $options: "i" } },
+                                    {
+                                        $expr: {
+                                            $regexMatch: {
+                                                input: { $toString: "$doctorDetails.feePerConsultation" },
+                                                regex: searchValue,
+                                                options: "i"
+                                            }
+                                        }
+                                    },
+                                ]
+                            }
+                        },
+                        { $sort: { createdAt: -1 } }
+
+                    ];
+
+                    const myAppointments = await appointmentsModel.aggregate(queryObject);
+                    const myAppointmentCount = await appointmentsModel.find({ userId: user_id }).countDocuments();
+                    responseReturn(res, 200, { myAppointments, myAppointmentCount });
+
+
+                } else {
+
+                    const queryObject = [
+                        {
+                            $match: {
+                                userId: user.userId
+                            }
+                        }, {
+                            $lookup: {
+                                from: 'doctors',
+                                localField: 'doctorId',
+                                foreignField: '_id',
+                                as: "doctorDetails"
+                            }
+                        },
+                        {
+                            $unwind: '$doctorDetails',
+                        },
+                        { $skip: skipPage },
+                        { $limit: parPage },
+                        { $sort: { createdAt: -1 } }
+                    ];
+
+                    const myAppointments = await appointmentsModel.aggregate(queryObject);
+                    const myAppointmentCount = await appointmentsModel.find({ userId: user_id }).countDocuments();
+                    responseReturn(res, 200, { myAppointments, myAppointmentCount });
+
+                }
             } else {
+                responseReturn(res, 500, { error: "User not found!" });
+            }
 
-                const myAppointments = await appointmentsModel.find({ userId: userId, status: 'approved' }).skip(skipPage).limit(parPage).sort({ createdAt: -1 });
-                console.log(myAppointments)
+        } catch (error) {
+            responseReturn(res, 500, { error: "Server error!" });
+        }
+    }
 
+
+    // cancle_appointment
+    cancle_appointment = async (req, res) => {
+        const { appoi_id, doctorUserId, userName } = req.body;
+
+        try {
+            const cancelApp = await appointmentsModel.findByIdAndDelete(appoi_id);
+
+            if (cancelApp) {
+                const doctor = await userModel.findById(doctorUserId);
+
+                if (doctor) {
+                    const unseenNotifications = doctor.unseenNotifications || [];
+                    unseenNotifications.push({
+                        type: "Cancel-appointment-request",
+                        message: `Appointment has been cancled by ${userName}`,
+                        onclickPath: "/"
+                    });
+
+                    await userModel.findByIdAndUpdate(doctorUserId, { unseenNotifications }, { new: true });
+                } else {
+                    responseReturn(res, 400, { error: "Doctor not found!" });
+                }
+
+                responseReturn(res, 200, { message: "Appointmnet cancled successfully" })
             }
 
         } catch (error) {

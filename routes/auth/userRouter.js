@@ -27,6 +27,8 @@ router.post('/book-appointment', authMiddleware, userController.book_appointment
 
 router.get('/get-appointment', authMiddleware, userController.get_appointment);
 
+router.put('/cancle-appointment', authMiddleware, userController.cancle_appointment);
+
 
 
 module.exports = router;

@@ -18,7 +18,7 @@ class doctorController {
 
         try {
             const doctor = await doctorModel.findOne({ userId: id });
-
+            
             if (doctor) {
 
                 if (searchValue) {
