@@ -500,7 +500,7 @@ class userController {
 
                 }
             } else {
-                responseReturn(res, 500, { error: "User not found!" });
+                console.log('User not found!')
             }
 
         } catch (error) {
