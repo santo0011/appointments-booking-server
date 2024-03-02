@@ -137,6 +137,77 @@ class adminController {
 
     }
 
+    // get_users_list
+    get_users_list = async (req, res) => {
+        const { searchValue, page, parPage } = req.query;
+        const skipPage = parseInt(parPage) * (parseInt(page) - 1);
+
+        try {
+
+            if (searchValue) {
+                const users = await userModel.find({
+                    isAdmin: false,
+                    $or: [
+                        { fullName: { $regex: searchValue, $options: 'i' } },
+                        { email: { $regex: searchValue, $options: 'i' } },
+                        { isActive: { $regex: searchValue, $options: 'i' } },
+                    ]
+                }).sort({ createdAt: -1 });
+
+                const userCount = await userModel.find({ isAdmin: false }).countDocuments();
+                responseReturn(res, 200, {
+                    allUsers: users,
+                    userCount
+                })
+
+            } else {
+                const users = await userModel.find({ isAdmin: false }).skip(skipPage).limit(parPage).sort({ createdAt: -1 });
+                const userCount = await userModel.find({ isAdmin: false }).countDocuments();
+                responseReturn(res, 200, {
+                    allUsers: users,
+                    userCount
+                })
+            }
+
+        } catch (error) {
+            responseReturn(res, 500, { error: "Server error !" });
+        }
+
+    }
+
+
+    // change_user_Staus
+    change_user_Staus = async (req, res) => {
+        const { id, status } = req.body;
+        try {
+            const userStatus = await userModel.findByIdAndUpdate(id, { isActive: status }, { new: true });
+
+            if (userStatus) {
+                const user = await userModel.findById(id);
+                const unseenNotifications = user.unseenNotifications
+                unseenNotifications.push({
+                    type: "Approved message",
+                    message: `Your account has been ${status === true ? 'block' : 'active'}`,
+                    onclickPath: "/user-notifications"
+                })
+
+                await userModel.findByIdAndUpdate(user._id, { unseenNotifications })
+
+                responseReturn(res, 200, { message: `User ${status === true ? 'block' : 'active'} success` })
+            }
+
+        } catch (error) {
+
+
+            console.log(error.message)
+
+            return
+
+            responseReturn(res, 500, { error: "Server error !" });
+        }
+
+    }
+
 }
 
 

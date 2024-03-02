@@ -342,9 +342,14 @@ class userController {
     check_book_availability = async (req, res) => {
         const { time, userId, doctorId, doctorUserId, userName } = req.body;
 
-        const date = moment(req.body.date, "DD-MM-YYYY").toISOString()
-        const formTime = moment(time, "HH:mm").subtract(1, 'hours').toISOString()
-        const toTime = moment(time, "HH:mm").add(1, 'hours').toISOString()
+
+        const parsedTime = moment(time, 'HH:mm');
+
+        const date = moment(req.body.date, "YYYY-MM-DD").toISOString()
+        const formTime = parsedTime.clone().subtract(14, 'minutes').format('HH:mm:ss.SSS');
+        const toTime = parsedTime.clone().add(15, 'minutes').format('HH:mm:ss.SSS');
+
+
 
         try {
             const appointments = await appointmentsModel.find({
@@ -376,8 +381,9 @@ class userController {
             responseReturn(res, 400, { error: "All fields are required!" });
         } else {
 
-            const ddddd = moment(date, 'DD-MM-YYYY').toISOString();
-            const ttttt = moment(time, 'HH:mm').toISOString();
+            const ddddd = moment(date, 'YYYY-MM-DD').toISOString();
+            const ttttt = moment(time, 'HH:mm').format('HH:mm:ss.SSS');
+
             try {
                 const appointment = await appointmentsModel.create({
                     userId,

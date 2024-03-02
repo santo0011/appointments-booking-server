@@ -27,7 +27,7 @@ app.use('/api', require('./routes/admin/adminRoute'));
 
 
 app.get('/home', (req, res) => {
-    res.json('Welcome home pagesss')
+    res.json('Welcome home pages')
 })
 
 

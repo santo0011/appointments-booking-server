@@ -14,5 +14,9 @@ router.get('/get-doctors-list', authMiddleware, adminController.get_doctors_list
 
 router.put('/change-doctor-status', authMiddleware, adminController.change_doctor_Staus);
 
+router.get('/get-users-list', authMiddleware, adminController.get_users_list);
+
+router.put('/change-user-status', authMiddleware, adminController.change_user_Staus);
+
 
 module.exports = router;
