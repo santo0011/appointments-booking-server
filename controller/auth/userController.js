@@ -6,6 +6,11 @@ const bcrpty = require('bcrypt');
 const moment = require('moment');
 const { createToken } = require('../../utiles/tokenCreate');
 const { ObjectId } = require('mongodb');
+const { Resend } = require('resend');
+const resend = new Resend(process.env.redend_api);
+const jwt = require('jsonwebtoken');
+
+
 
 class userController {
 
@@ -31,19 +36,92 @@ class userController {
             if (getUser) {
                 responseReturn(res, 400, { error: "User alrady exists !" })
             } else {
-                const user = await userModel.create({
-                    fullName,
-                    email,
-                    password: await bcrpty.hash(password, 10)
-                });
 
-                responseReturn(res, 201, { message: "Regsiter success" })
+                // generate otp
+                const otpLength = 6;
+                const digits = '0123456789';
+                let otp = '';
+
+                for (let i = 0; i < otpLength; i++) {
+                    const randomIndex = Math.floor(Math.random() * digits.length);
+                    otp += digits.charAt(randomIndex);
+                }
+                // emailOptions
+                const emailOptions = {
+                    from: 'Appointment <verify@vectorvalley.xyz>',
+                    to: email,
+                    subject: 'Verify your account',
+                    html: `
+                        <div style="padding: 20px; font-family: Arial, sans-serif;">
+                            <h2 style="color: #333;">Welcome to Resend!</h2>
+                            <p style="font-size: 16px;">
+                                Thank you for signing up. To complete your account verification, please use the OTP code below:
+                            </p>
+                            <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin-top: 20px;">
+                                <h3 style="margin: 0; color: #333;">Your OTP Code:</h3>
+                                <p style="font-size: 24px; font-weight: bold; color: #0080ff;">${otp}</p>
+                            </div>
+                            <p style="font-size: 16px;">Please enter this code on the verification page to activate your account.</p>
+                            <p style="font-size: 16px;">
+                                If you did not sign up for an account with Resend, you can safely ignore this email.
+                            </p>
+                            <p style="font-size: 16px;">
+                                If you have any questions or need assistance, feel free to contact us at verify@resend.dev.
+                            </p>
+                            <p style="font-size: 16px;">Best regards,<br/>The Resend Team</p>
+                        </div>
+                    `
+                };
+
+                const { error, data } = await resend.emails.send(emailOptions);
+
+                if (error) {
+
+                    responseReturn(res, 404, { error: "Somethings else please try again" })
+                } else {
+                    const verifyEmailToken = await createToken({
+                        fullName,
+                        email,
+                        password: await bcrpty.hash(password, 10),
+                        otpCode: otp
+                    });
+                    responseReturn(res, 201, { message: 'Check your email and submit otp', verifyEmailToken })
+                }
+
             }
 
         } catch (error) {
             responseReturn(res, 500, { error: "Server error !" })
         }
 
+    }
+
+    // verify_email
+    verify_email = async (req, res) => {
+        const { otp, token } = req.body;
+
+        if (!otp) {
+            responseReturn(res, 404, { error: "Please provide your otp" })
+        } else {
+            const { fullName, email, password, otpCode } = await jwt.verify(token, process.env.SECRET);
+            try {
+                if (parseInt(otp) !== parseInt(otpCode)) {
+                    responseReturn(res, 404, { error: "Please provide valid otp" })
+                } else {
+                    const user = await userModel.create({
+                        fullName,
+                        email,
+                        password,
+                    });
+
+                    responseReturn(res, 201, { message: "Regsiter success" })
+                }
+
+            } catch (error) {
+                responseReturn(res, 500, { error: error.message })
+            }
+
+        }
     }
 
     // user_login
